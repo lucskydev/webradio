@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Web Rádio</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600&family=Source+Sans+Pro:wght@300;400&display=swap');
+
+  :root {
+    --bg: #0d0d0d;
+    --panel: #1a1a1a;
+    --border: #2e2e2e;
+    --accent: #e8a020;
+    --accent2: #c0392b;
+    --text: #f0ede8;
+    --muted: #888;
+    --radius: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  header {
+    background: var(--panel);
+    border-bottom: 2px solid var(--accent);
+    padding: 10px 14px 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  header .logo {
+    font-family: 'Oswald', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  header .logo span {
+    color: var(--text);
+    font-weight: 300;
+  }
+
+  /* PLAYER */
+  #player-bar {
+    background: linear-gradient(135deg, #1f1f1f, #141414);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+  }
+
+  #now-playing {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+
+  #station-name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 8px;
+  }
+
+  #controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  #btn-play {
+    background: var(--accent);
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    color: #000;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+    -webkit-appearance: none;
+  }
+
+  #btn-play:active { transform: scale(0.93); background: #d4901a; }
+
+  #btn-stop {
+    background: transparent;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    font-size: 14px;
+    color: var(--muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s, color 0.15s;
+    -webkit-appearance: none;
+  }
+
+  #btn-stop:active { border-color: var(--accent2); color: var(--accent2); }
+
+  #volume-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  #vol-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  #volume {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    outline: none;
+  }
+
+  #volume::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+
+  #status {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 5px;
+    min-height: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  #status .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+  }
+
+  #status.playing .dot { background: #2ecc71; animation: pulse 1.2s infinite; }
+  #status.loading .dot { background: var(--accent); animation: pulse 0.6s infinite; }
+  #status.error .dot { background: var(--accent2); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* TABS */
+  #tabs {
+    display: flex;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 10px 0;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* CONTENT */
+  #content {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* STATION LIST */
+  .station-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+    -webkit-user-select: none;
+  }
+
+  .station-item:active { background: #232323; }
+  .station-item.current { background: #1e1a12; border-left: 3px solid var(--accent); padding-left: 11px; }
+
+  .station-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    color: var(--accent);
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+  }
+
+  .station-info { flex: 1; min-width: 0; }
+
+  .station-info .name {
+    font-family: 'Oswald', sans-serif;
+    font-size: 15px;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .station-info .genre {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  .play-icon {
+    font-size: 18px;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .station-item.current .play-icon { color: var(--accent); }
+
+  /* CUSTOM STREAM */
+  #custom-panel {
+    padding: 16px 14px;
+  }
+
+  #custom-panel label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  #custom-url {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+    margin-bottom: 10px;
+    -webkit-appearance: none;
+  }
+
+  #custom-url:focus { border-color: var(--accent); }
+
+  #custom-name {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    padding: 10px 12px;
+    outline: none;
+    margin-bottom: 12px;
+    -webkit-appearance: none;
+  }
+
+  #custom-name:focus { border-color: var(--accent); }
+
+  #btn-add-custom {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Oswald', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 12px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    margin-bottom: 8px;
+  }
+
+  #btn-add-custom:active { background: #d4901a; }
+
+  #btn-play-custom {
+    width: 100%;
+    background: transparent;
+    color: var(--accent);
+    border: 2px solid var(--accent);
+    border-radius: var(--radius);
+    font-family: 'Oswald', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 11px;
+    cursor: pointer;
+    -webkit-appearance: none;
+  }
+
+  #btn-play-custom:active { background: #1e1a12; }
+
+  .tip {
+    margin-top: 16px;
+    padding: 10px 12px;
+    background: #1a1a1a;
+    border-left: 3px solid var(--border);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .tip b { color: var(--text); }
+
+  /* Saved custom */
+  #saved-customs { margin-top: 16px; }
+  #saved-customs h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .custom-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .custom-item .ci-name {
+    flex: 1;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .custom-item .ci-name:active { color: var(--accent); }
+
+  .ci-del {
+    background: none;
+    border: none;
+    color: #555;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 2px 4px;
+    -webkit-appearance: none;
+  }
+
+  .ci-del:active { color: var(--accent2); }
+
+  audio { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Web<span>Rádio</span></div>
+</header>
+
+<div id="player-bar">
+  <div id="now-playing">Nenhuma estação</div>
+  <div id="station-name">— selecione uma rádio —</div>
+  <div id="controls">
+    <button id="btn-play" title="Play/Pause">&#9654;</button>
+    <button id="btn-stop" title="Parar">&#9632;</button>
+    <div id="volume-wrap">
+      <div id="vol-label">Volume</div>
+      <input type="range" id="volume" min="0" max="1" step="0.05" value="1">
+    </div>
+  </div>
+  <div id="status"><span class="dot"></span><span id="status-text">Parado</span></div>
+</div>
+
+<div id="tabs">
+  <button class="tab-btn active" data-tab="list">Estações</button>
+  <button class="tab-btn" data-tab="custom">URL</button>
+</div>
+
+<div id="content">
+
+  <div id="tab-list" class="tab-panel active">
+    <!-- stations rendered by JS -->
+  </div>
+
+  <div id="tab-custom" class="tab-panel">
+    <div id="custom-panel">
+      <label>Nome da rádio (opcional)</label>
+      <input type="text" id="custom-name" placeholder="Ex: Minha Rádio Favorita">
+      <label>URL do stream (MP3, AAC, M3U8...)</label>
+      <input type="url" id="custom-url" placeholder="http://... ou https://...">
+      <button id="btn-play-custom">▶ Tocar agora</button>
+      <button id="btn-add-custom">+ Salvar na lista</button>
+
+      <div class="tip">
+        <b>Dica:</b> A URL deve ser o endereço direto do stream de áudio. Formatos suportados: <b>.mp3</b>, <b>.aac</b>, <b>.ogg</b>, <b>.m3u</b>, <b>.pls</b>. Evite links de páginas HTML.<br><br>
+        <b>Atenção:</b> Streams <b>https://</b> funcionam melhor. Se não tocar, tente abrir este arquivo pelo app <b>Chrome</b> ou <b>Firefox</b>.
+      </div>
+
+      <div id="saved-customs">
+        <h3>Salvas por você</h3>
+        <div id="custom-list"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<audio id="audio-player" preload="none"></audio>
+
+<script>
+// ── ESTAÇÕES PRÉ-CONFIGURADAS ────────────────────────────────────────────────
+var STATIONS = [
+  { name: "Vitrola de Itatiba",    genre: "Eclética",  icon: "VT", url: "https://stream1.svrdedicado.org:7172/stream?1774741782697" },
+  { name: "Paradise Main",    genre: "Eclética",  icon: "PM", url: "http://stream.radioparadise.com/mp3-192" },
+  { name: "Paradise Mellow",    genre: "Eclética",  icon: "PM", url: "http://stream.radioparadise.com/mellow-192" },
+  { name: "Paradise Global",    genre: "Eclética",  icon: "PG", url: "http://stream.radioparadise.com/global-192" },
+  { name: "Paradise Rock",    genre: "Rock",  icon: "PR", url: "http://stream.radioparadise.com/rock-192" },
+  { name: "1.FM Classic Rock",    genre: "Rock",  icon: "1R", url: "https://strm112.1.fm/rockclassics_mobile_mp3" },
+  { name: "Oui FM Classic Rock",    genre: "Rock",  icon: "OR", url: "https://ouifm3.ice.infomaniak.ch/ouifm3.mp3" },
+  { name: "Oui FM Acoustic",    genre: "Rock",  icon: "OR", url: "https://ouifm.ice.infomaniak.ch/ouifm-high.mp3" },
+  { name: "Oui FM Slow Rock",    genre: "Rock",  icon: "OR", url: "https://ouifmlesslowsdurock.ice.infomaniak.ch/ouifmslowrock.mp3" },
+  { name: "Oui FM Blues Rock",    genre: "Rock",  icon: "OR", url: "https://ouifmbluesnrock.ice.infomaniak.ch/ouifmbluesnrock-128.mp3" },
+];
+
+// ── ESTADO ───────────────────────────────────────────────────────────────────
+var audio = document.getElementById('audio-player');
+var currentIndex = -1;
+var isPlaying = false;
+var customStations = loadCustom();
+
+// ── UI REFS ──────────────────────────────────────────────────────────────────
+var btnPlay   = document.getElementById('btn-play');
+var btnStop   = document.getElementById('btn-stop');
+var volInput  = document.getElementById('volume');
+var statusDiv = document.getElementById('status');
+var statusTxt = document.getElementById('status-text');
+var nowPlaying= document.getElementById('now-playing');
+var stName    = document.getElementById('station-name');
+var listEl    = document.getElementById('tab-list');
+
+// ── RENDER STATIONS ──────────────────────────────────────────────────────────
+function renderList() {
+  var all = STATIONS.concat(customStations);
+  listEl.innerHTML = '';
+  all.forEach(function(s, i) {
+    var div = document.createElement('div');
+    div.className = 'station-item' + (i === currentIndex ? ' current' : '');
+    div.innerHTML =
+      '<div class="station-icon">' + s.icon + '</div>' +
+      '<div class="station-info">' +
+        '<div class="name">' + s.name + '</div>' +
+        '<div class="genre">' + s.genre + '</div>' +
+      '</div>' +
+      '<div class="play-icon">' + (i === currentIndex && isPlaying ? '&#9654;' : '&#9654;') + '</div>';
+    div.addEventListener('click', function() { playStation(i); });
+    listEl.appendChild(div);
+  });
+}
+
+// ── PLAYER ───────────────────────────────────────────────────────────────────
+function playStation(index) {
+  var all = STATIONS.concat(customStations);
+  var s = all[index];
+  currentIndex = index;
+  isPlaying = false;
+
+  nowPlaying.textContent = 'Agora tocando';
+  stName.textContent = s.name;
+  setStatus('loading', 'Conectando...');
+  btnPlay.innerHTML = '&#9646;&#9646;';
+
+  audio.src = s.url;
+  audio.load();
+  audio.play().catch(function(e) {
+    setStatus('error', 'Erro ao iniciar. Tente outro stream.');
+    btnPlay.innerHTML = '&#9654;';
+  });
+
+  renderList();
+}
+
+function playUrl(url, name) {
+  currentIndex = -1;
+  nowPlaying.textContent = 'URL personalizada';
+  stName.textContent = name || url;
+  setStatus('loading', 'Conectando...');
+  btnPlay.innerHTML = '&#9646;&#9646;';
+
+  audio.src = url;
+  audio.load();
+  audio.play().catch(function() {
+    setStatus('error', 'Erro. Verifique a URL ou tente no Chrome.');
+    btnPlay.innerHTML = '&#9654;';
+  });
+}
+
+audio.addEventListener('playing', function() {
+  isPlaying = true;
+  setStatus('playing', 'Transmitindo');
+  btnPlay.innerHTML = '&#9646;&#9646;';
+  renderList();
+});
+
+audio.addEventListener('waiting', function() {
+  setStatus('loading', 'Bufferizando...');
+});
+
+audio.addEventListener('error', function() {
+  isPlaying = false;
+  setStatus('error', 'Erro no stream. Verifique a URL.');
+  btnPlay.innerHTML = '&#9654;';
+});
+
+audio.addEventListener('pause', function() {
+  isPlaying = false;
+  setStatus('', 'Pausado');
+  btnPlay.innerHTML = '&#9654;';
+});
+
+btnPlay.addEventListener('click', function() {
+  if (!audio.src || audio.src === window.location.href) return;
+  if (audio.paused) {
+    audio.play();
+  } else {
+    audio.pause();
+  }
+});
+
+btnStop.addEventListener('click', function() {
+  audio.pause();
+  audio.src = '';
+  isPlaying = false;
+  currentIndex = -1;
+  nowPlaying.textContent = 'Nenhuma estação';
+  stName.textContent = '— selecione uma rádio —';
+  btnPlay.innerHTML = '&#9654;';
+  setStatus('', 'Parado');
+  renderList();
+});
+
+volInput.addEventListener('input', function() {
+  audio.volume = this.value;
+});
+
+function setStatus(cls, txt) {
+  statusDiv.className = cls;
+  statusTxt.textContent = txt;
+  if (!statusDiv.querySelector('.dot')) {
+    var d = document.createElement('span');
+    d.className = 'dot';
+    statusDiv.insertBefore(d, statusDiv.firstChild);
+  }
+}
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── CUSTOM URL ────────────────────────────────────────────────────────────────
+document.getElementById('btn-play-custom').addEventListener('click', function() {
+  var url  = document.getElementById('custom-url').value.trim();
+  var name = document.getElementById('custom-name').value.trim();
+  if (!url) { alert('Cole a URL do stream primeiro.'); return; }
+  playUrl(url, name || url);
+});
+
+document.getElementById('btn-add-custom').addEventListener('click', function() {
+  var url  = document.getElementById('custom-url').value.trim();
+  var name = document.getElementById('custom-name').value.trim();
+  if (!url) { alert('Cole a URL do stream primeiro.'); return; }
+  var entry = { name: name || url, genre: 'URL personalizada', icon: 'MY', url: url };
+  customStations.push(entry);
+  saveCustom();
+  renderList();
+  renderCustomList();
+  document.getElementById('custom-url').value = '';
+  document.getElementById('custom-name').value = '';
+  alert('Rádio salva na lista!');
+});
+
+function renderCustomList() {
+  var el = document.getElementById('custom-list');
+  el.innerHTML = '';
+  if (customStations.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px">Nenhuma rádio salva ainda.</p>';
+    return;
+  }
+  customStations.forEach(function(s, i) {
+    var d = document.createElement('div');
+    d.className = 'custom-item';
+    var nm = document.createElement('span');
+    nm.className = 'ci-name';
+    nm.textContent = s.name;
+    nm.addEventListener('click', function() {
+      playStation(STATIONS.length + i);
+      // switch to list tab
+      document.querySelectorAll('.tab-btn')[0].click();
+    });
+    var del = document.createElement('button');
+    del.className = 'ci-del';
+    del.textContent = '✕';
+    del.addEventListener('click', function() {
+      customStations.splice(i, 1);
+      saveCustom();
+      renderList();
+      renderCustomList();
+    });
+    d.appendChild(nm);
+    d.appendChild(del);
+    el.appendChild(d);
+  });
+}
+
+// ── STORAGE ──────────────────────────────────────────────────────────────────
+function saveCustom() {
+  try { localStorage.setItem('wr_custom', JSON.stringify(customStations)); } catch(e) {}
+}
+function loadCustom() {
+  try { return JSON.parse(localStorage.getItem('wr_custom')) || []; } catch(e) { return []; }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderList();
+renderCustomList();
+</script>
+</body>
+</html>
